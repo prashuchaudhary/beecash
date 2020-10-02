@@ -1,0 +1,25 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+drf-yasg = {extras = ["validation"], version = "*"}
+django-rest-swagger = "*"
+django = "==2.2.8"
+django-extensions = "*"
+gunicorn = "*"
+invoke = "*"
+pydash = "*"
+ipython = "*"
+coloredlogs = "*"
+django-environ = "*"
+requests = "*"
+psycopg2 = "*"
+packaging = "*"
+djangorestframework = "==3.11.2"
+
+[requires]
+python_version = "3.8"

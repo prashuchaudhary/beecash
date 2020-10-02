@@ -11,10 +11,31 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import environ
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False),
+    IS_PRODUCTION=(bool, False),
+    COLORIZED_LOGS=(bool, True),
+    LOG_LEVEL=(str, "INFO")
+)
 
+ENV_FILE_DIR = os.path.join(BASE_DIR, "beecash")
+if os.environ.get("IS_PRODUCTION") == "True":
+    pass
+else:
+    env_file = os.path.join(ENV_FILE_DIR, ".env")
+    environ.Env.read_env(env_file)
+
+# False if not in os.environ
+DEBUG = env("DEBUG")
+IS_PRODUCTION = env("IS_PRODUCTION")
+COLORIZED_LOGS = env("COLORIZED_LOGS")
+LOG_LEVEL = env("LOG_LEVEL")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
@@ -22,11 +43,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'n24ex9#&k*s-7)-a0tpfr9-c0vb$5$n!ravtd-+dt75!qvkb@t'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
@@ -37,6 +54,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "rest_framework",
+    "rest_framework.authtoken",
+    "rest_framework_swagger",
+    "drf_yasg",
+    "django_extensions",
+    "user_manager",
+    "ledger"
 ]
 
 MIDDLEWARE = [
@@ -69,17 +93,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'beecash.wsgi.application'
 
+AUTH_USER_MODEL = "user_manager.User"
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+DATABASES = {"default": env.db("DATABASE_URL")}
+
+REDIS_URL = env("REDIS_URL")
+
+# CACHE SETTINGS
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
@@ -114,7 +144,78 @@ USE_L10N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.1/howto/static-files/
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "coloredlogs": {
+            "()": "coloredlogs.ColoredFormatter",
+            "datefmt": "%d/%b/%Y %H:%M:%S",
+            "fmt": "[%(asctime)s] %(levelname)s [%(module)s:%(name)s:%(lineno)s] %(message)s",
+        },
+        "verbose": {
+            "format": "[%(asctime)s] %(levelname)s [%(module)s:%(name)s:%(lineno)s] %(message)s",
+            "datefmt": "%d/%b/%Y %H:%M:%S",
+        },
+        "simple": {"format": "%(levelname)s %(message)s"},
+    },
+    "handlers": {
+        "console": {
+            "level": LOG_LEVEL,
+            "class": "logging.StreamHandler",
+            "formatter": "verbose" if IS_PRODUCTION and COLORIZED_LOGS else "coloredlogs",
+        },
+    },
+    "loggers": {
+        "": {"handlers": ["console"], "level": LOG_LEVEL},
+        "django.request": {"handlers": ["console"], "propagate": True, "level": "DEBUG"},
+        "django.db.backends": {"handlers": ["console"], "propagate": False, "level": "DEBUG"},
+        "django.server": {"handlers": ["console"], "propagate": False, "level": "DEBUG"},
+    },
+}
 
-STATIC_URL = '/static/'
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.DjangoModelPermissions",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "utils.pagination.BeeCashPageNumberPagination",
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework_swagger.renderers.OpenAPIRenderer",
+        "rest_framework_swagger.renderers.SwaggerUIRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+    ],
+}
+
+
+STATIC_ROOT = os.path.join(BASE_DIR, "build", "static")
+MEDIA_ROOT = os.path.join(BASE_DIR, "build", "media")
+
+STATIC_URL = "/static/"
+MEDIA_URL = "/media/"
+
+# Extra places for collectstatic to find static files.
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+
+
+SWAGGER_SETTINGS = {
+    "DEFAULT_INFO": "beecash.urls.api_info",
+    "SECURITY_DEFINITIONS": {
+        "basic": {"type": "basic"},
+        "Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"},
+    },
+}
+
+REDOC_SETTINGS = {
+    "LAZY_RENDERING": False,
+}
