@@ -20,6 +20,7 @@ requests = "*"
 psycopg2 = "*"
 packaging = "*"
 djangorestframework = "==3.11.2"
+python-dateutil = "*"
 
 [requires]
 python_version = "3.8"

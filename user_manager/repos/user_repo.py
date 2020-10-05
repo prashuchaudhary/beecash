@@ -11,7 +11,8 @@ def get(pk):
         return None
 
 
-def filter_(**kwargs):
+def filter_(phone=SENTINEL):
+    kwargs = filter_sentinel(locals().copy())
     return User.objects.filter(**kwargs)
 
 

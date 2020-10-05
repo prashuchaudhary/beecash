@@ -34,6 +34,7 @@ urlpatterns = [
         include(
             [
                 url(r"^", include("user_manager.urls")),
+                url(r"^", include("ledger.urls")),
             ]
         ),
     )

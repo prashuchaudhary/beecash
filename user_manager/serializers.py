@@ -1,5 +1,5 @@
-from rest_framework.fields import SerializerMethodField
-from rest_framework.serializers import ModelSerializer
+from rest_framework.fields import SerializerMethodField, CharField
+from rest_framework.serializers import ModelSerializer, Serializer
 from user_manager.models import User
 
 
@@ -23,6 +23,17 @@ class UserSerializer(ModelSerializer):
             "last_name",
             "first_name",
         )
+        read_only_fields = ("id", "full_name", "is_admin")
 
     def get_is_admin(self, instance):
         return instance.is_admin()
+
+
+class UserSummarySerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "full_name")
+
+
+class UserFilterSerializer(Serializer):
+    phone = CharField(required=False, allow_null=False)

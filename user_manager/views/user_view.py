@@ -1,15 +1,17 @@
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import GenericViewSet
 from drf_yasg.utils import swagger_auto_schema
 from user_manager.interactors import user_interactor
 from user_manager.permissions import UserPermission
-from user_manager.serializers import UserSerializer, CreateUserSerializer
+from user_manager.serializers import UserSerializer, CreateUserSerializer, UserFilterSerializer
 
 
 class UserViewSet(GenericViewSet):
     serializer_class = UserSerializer
-    permission_classes = api_settings.DEFAULT_PERMISSION_CLASSES + [UserPermission]
+    permission_classes = (AllowAny,)
+    # permission_classes = api_settings.DEFAULT_PERMISSION_CLASSES + [UserPermission]
 
     def get_queryset(self):
         return user_interactor.filter_users()
@@ -20,7 +22,11 @@ class UserViewSet(GenericViewSet):
         responses={200: UserSerializer()},
     )
     def list(self, request, *args, **kwargs):
-        users = user_interactor.filter_users()
+        serializer = UserFilterSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        users = user_interactor.filter_users(**serializer.validated_data)
+
         page = self.paginate_queryset(users)
         serializer = UserSerializer(page, many=True)
         return self.get_paginated_response(serializer.data)
@@ -32,11 +38,8 @@ class UserViewSet(GenericViewSet):
         responses={200: UserSerializer()}
     )
     def post(self, request):
-        params = request.data.copy()
-        params["client_id"] = request.user.client_id
-        serializer = CreateUserSerializer(data=params)
+        serializer = CreateUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         user = user_interactor.create_user(**serializer.validated_data)
         return Response(UserSerializer(instance=user).data)
 
