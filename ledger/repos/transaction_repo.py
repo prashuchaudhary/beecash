@@ -12,13 +12,13 @@ def get(pk):
 
 def filter_(
     transaction_type=SENTINEL, contact_id=SENTINEL, amount=SENTINEL,
-    created_by_id=SENTINEL, created_at__range=SENTINEL
+    created_by_id=SENTINEL, client_timestamp=SENTINEL
 ):
     kwargs = filter_sentinel(locals().copy())
     return Transaction.objects.filter(**kwargs)
 
 
-def create(amount, transaction_type, created_by_id, contact_id=SENTINEL):
+def create(amount, transaction_type, created_by_id, client_timestamp, contact_id=SENTINEL):
     kwargs = filter_sentinel(locals().copy())
     return Transaction.objects.create(**kwargs)
 

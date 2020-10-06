@@ -6,13 +6,13 @@ from utils.choice import ChoiceField
 
 
 class CreateTransactionSerializer(ModelSerializer):
-    contact_id = IntegerField()
     created_by_id = IntegerField()
+    contact_id = IntegerField(required=False, allow_null=True)
     transaction_type = ChoiceField(labels=TransactionType.choices())
 
     class Meta:
         model = Transaction
-        fields = ("amount", "contact_id", "transaction_type", "created_by_id")
+        fields = ("amount", "contact_id", "transaction_type", "created_by_id", "client_timestamp")
 
 
 class TransactionSerializer(ModelSerializer):

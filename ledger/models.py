@@ -12,6 +12,7 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     transaction_type = models.PositiveSmallIntegerField(choices=TransactionType.choices())
     contact = models.ForeignKey('user_manager.User', on_delete=models.PROTECT, null=True, blank=True)
+    client_timestamp = models.BigIntegerField()
 
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="transactions")
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -19,3 +20,4 @@ class Transaction(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        unique_together = ('amount', 'transaction_type', 'contact', 'client_timestamp')
